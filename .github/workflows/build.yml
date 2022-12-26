@@ -5,7 +5,7 @@ jobs:
   build:
     strategy:
       matrix:
-        ros: [noetic]
+        ros: [{ version: noetic, latest: true }]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,13 +23,28 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push
-        uses: docker/build-push-action@v2
+        if: ${{ matrix.ros.latest == false }}
+        uses: docker/build-push-action@v3
         with:
-          context: ./${{ matrix.ros }}
-          file: ${{ matrix.ros }}/Dockerfile
+          context: ./${{ matrix.ros.version }}
+          file: ${{ matrix.ros.version }}/Dockerfile
           platforms: linux/amd64, linux/arm64
           push: true
-          tags: atsushisaito/docker-ubuntu-sweb-ros:${{ matrix.ros }}
-          cache-from: type=gha,scope=${{ matrix.ros }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.ros }}
-          
+          cache-from: type=gha,scope=${{ matrix.ros.version }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.ros.version }}
+          tags: |
+            atsushisaito/docker-ubuntu-sweb:${{ matrix.ros.version }}
+
+      - name: Build and Push Latest
+        if: ${{ matrix.ros.latest == true }}
+        uses: docker/build-push-action@v3
+        with:
+          context: ./${{ matrix.ros.version }}
+          file: ${{ matrix.ros.version }}/Dockerfile
+          platforms: linux/amd64, linux/arm64
+          push: true
+          cache-from: type=gha,scope=${{ matrix.ros.version }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.ros.version }}
+          tags: |
+            atsushisaito/docker-ubuntu-sweb:${{ matrix.ros.version }}
+            atsushisaito/docker-ubuntu-sweb:latest
