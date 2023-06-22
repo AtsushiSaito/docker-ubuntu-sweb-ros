@@ -1,14 +1,27 @@
 name: Build
-on: push
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  push:
 
 jobs:
   build:
     strategy:
       matrix:
-        ros: [{ version: noetic, latest: true }]
+        ros:
+          [
+            { code: noetic, version: base, fname: Base },
+            { code: noetic, version: desktop, fname: Desktop },
+            { code: noetic, version: desktop-full, fname: DesktopFull },
+          ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set Current Date
+        env:
+          TZ: "Asia/Tokyo"
+        run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
@@ -22,29 +35,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push
-        if: ${{ matrix.ros.latest == false }}
-        uses: docker/build-push-action@v3
-        with:
-          context: ./${{ matrix.ros.version }}
-          file: ${{ matrix.ros.version }}/Dockerfile
-          platforms: linux/amd64, linux/arm64
-          push: true
-          cache-from: type=gha,scope=${{ matrix.ros.version }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.ros.version }}
-          tags: |
-            atsushisaito/docker-ubuntu-sweb:${{ matrix.ros.version }}
-
       - name: Build and Push Latest
-        if: ${{ matrix.ros.latest == true }}
         uses: docker/build-push-action@v3
         with:
-          context: ./${{ matrix.ros.version }}
-          file: ${{ matrix.ros.version }}/Dockerfile
+          context: ./${{ matrix.ros.code }}
+          file: ${{ matrix.ros.code }}/Dockerfile.${{ matrix.ros.fname }}
           platforms: linux/amd64, linux/arm64
           push: true
-          cache-from: type=gha,scope=${{ matrix.ros.version }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.ros.version }}
           tags: |
-            atsushisaito/docker-ubuntu-sweb:${{ matrix.ros.version }}
-            atsushisaito/docker-ubuntu-sweb:latest
+            atsushisaito/docker-ubuntu-sweb-ros:${{ matrix.ros.code }}-${{ matrix.ros.version }}
+            atsushisaito/docker-ubuntu-sweb-ros:${{ matrix.ros.code }}-${{ matrix.ros.version }}-${{ env.CURRENT_DATE }}
