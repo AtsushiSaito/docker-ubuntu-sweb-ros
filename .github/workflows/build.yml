@@ -13,6 +13,10 @@ jobs:
             { code: noetic, version: base, fname: Base },
             { code: noetic, version: desktop, fname: Desktop },
             { code: noetic, version: desktop-full, fname: DesktopFull },
+            { code: foxy, version: base, fname: Base },
+            { code: foxy, version: desktop, fname: Desktop },
+            { code: humble, version: base, fname: Base },
+            { code: humble, version: desktop, fname: Desktop },
           ]
     runs-on: ubuntu-latest
     steps:
